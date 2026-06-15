@@ -1,6 +1,7 @@
 name: "Publish"
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
   push:
@@ -19,27 +20,32 @@ jobs:
       matrix:
         abi: ["cp313", "cp314"]
         tag: ["musllinux_1_2"]
-        arch: ["aarch64", "amd64"]
+        arch: ["armv7", "armhf"]
         include:
           - abi: cp313
             base: 3.13-alpine3.22
           - abi: cp314
             base: 3.14-alpine3.22
 
-          - arch: aarch64
-            platform: linux/arm64
-            runs-on: ubuntu-24.04-arm
-          - arch: amd64
-            platform: linux/amd64
+          - arch: armv7
+            platform: linux/arm/v7
+            runs-on: ubuntu-latest
+          - arch: armhf
+            platform: linux/arm/v6
             runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.1
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v3.6.0
+        with:
+          platforms: arm
+
       - shell: bash
         id: info
         run: |
-          name="ghcr.io/home-assistant/wheels/${{ matrix.arch }}/${{ matrix.tag }}/${{ matrix.abi }}"
+          name="ghcr.io/${{ github.repository_owner }}/wheels/${{ matrix.arch }}/${{ matrix.tag }}/${{ matrix.abi }}"
 
           version=$(echo "${{ github.ref }}" | awk -F"/" '{print $NF}' )
           if [ "${version}" = "master" ]; then
@@ -65,7 +71,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           cache-from: type=registry,ref=${{ steps.info.outputs.name }}:dev
           build-args: |
-            BUILD_FROM=ghcr.io/home-assistant/${{ matrix.arch }}-base-python:${{ matrix.base }}
+            BUILD_FROM=ghcr.io/${{ github.repository_owner }}/${{ matrix.arch }}-base-python:${{ matrix.base }}
             BUILD_ARCH=${{ matrix.arch }}
             CPYTHON_ABI=${{ matrix.abi }}
           tags: |

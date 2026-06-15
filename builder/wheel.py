@@ -25,6 +25,8 @@ _RE_MUSLLINUX_PLATFORM: Final = re.compile(
 
 _ARCH_PLAT = {
     "amd64": "x86_64",
+    "armhf": "armv6l",
+    "armv7": "armv7l",
 }
 
 _ALPINE_MUSL_VERSION = {
